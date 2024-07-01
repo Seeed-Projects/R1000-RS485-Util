@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# Prompt for sudo password
-echo "Please enter your sudo password: "
-read -s SUDO_PASSWORD
-
-# Function to run commands with sudo and password
+# Function to run commands with sudo
 run_with_sudo() {
-  echo "$SUDO_PASSWORD" | sudo -S "$@"
+  sudo "$@"
 }
 
 # Step 0: Cleanup previous installations if they exist
@@ -36,7 +32,7 @@ LOGFILE=/var/log/setup_rs485.log
 echo "Starting setup at $(date)" | run_with_sudo tee -a $LOGFILE > /dev/null
 
 # Create the startup script
-echo "$SUDO_PASSWORD" | sudo -S tee /usr/local/bin/start_rs485.sh > /dev/null << 'EOF'
+run_with_sudo tee /usr/local/bin/start_rs485.sh > /dev/null << 'EOF'
 #!/bin/bash
 
 # Log file
@@ -64,7 +60,7 @@ EOF
 run_with_sudo chmod +x /usr/local/bin/start_rs485.sh
 
 # Create the systemd service file
-echo "$SUDO_PASSWORD" | sudo -S tee /etc/systemd/system/start_rs485.service > /dev/null << 'EOF'
+run_with_sudo tee /etc/systemd/system/start_rs485.service > /dev/null << 'EOF'
 [Unit]
 Description=Start Multiple RS485 DE Instances
 After=network.target
