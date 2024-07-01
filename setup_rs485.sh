@@ -9,6 +9,16 @@ run_with_sudo() {
   echo "$SUDO_PASSWORD" | sudo -S "$@"
 }
 
+# Step 0: Cleanup previous installations if they exist
+run_with_sudo systemctl disable start_rs485.service
+run_with_sudo systemctl daemon-reload
+
+# Delete existing files and directories if they exist
+[ -d "seeed-linux-dtoverlays" ] && run_with_sudo rm -rf seeed-linux-dtoverlays
+[ -f "/usr/local/bin/start_rs485.sh" ] && run_with_sudo rm -f /usr/local/bin/start_rs485.sh
+[ -f "/usr/bin/rs485_DE" ] && run_with_sudo rm -f /usr/bin/rs485_DE
+[ -f "/etc/systemd/system/start_rs485.service" ] && run_with_sudo rm -f /etc/systemd/system/start_rs485.service
+
 # Step 1: Install libgpiod-dev
 run_with_sudo apt-get update
 run_with_sudo apt-get install -y libgpiod-dev
@@ -18,6 +28,7 @@ git clone https://github.com/Seeed-Studio/seeed-linux-dtoverlays.git
 cd seeed-linux-dtoverlays/tools/rs485_control_DE/
 gcc -o rs485_DE rs485_DE.c -lgpiod
 run_with_sudo cp rs485_DE /usr/bin/
+cd -
 
 # Step 3: Create a bootup script
 LOGFILE=/var/log/setup_rs485.log
@@ -25,7 +36,7 @@ LOGFILE=/var/log/setup_rs485.log
 echo "Starting setup at $(date)" | run_with_sudo tee -a $LOGFILE > /dev/null
 
 # Create the startup script
-cat << 'EOF' | run_with_sudo tee /usr/local/bin/start_rs485.sh > /dev/null
+echo "$SUDO_PASSWORD" | sudo -S tee /usr/local/bin/start_rs485.sh > /dev/null << 'EOF'
 #!/bin/bash
 
 # Log file
@@ -53,7 +64,7 @@ EOF
 run_with_sudo chmod +x /usr/local/bin/start_rs485.sh
 
 # Create the systemd service file
-cat << 'EOF' | run_with_sudo tee /etc/systemd/system/start_rs485.service > /dev/null
+echo "$SUDO_PASSWORD" | sudo -S tee /etc/systemd/system/start_rs485.service > /dev/null << 'EOF'
 [Unit]
 Description=Start Multiple RS485 DE Instances
 After=network.target
